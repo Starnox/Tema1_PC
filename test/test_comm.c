@@ -199,6 +199,7 @@ uint8_t test_recv_message(void)
     /* Morty receives the message */
     recv_message();
 
+
     fflush(stdout);
 
     if (size != 12) {
