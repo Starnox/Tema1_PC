@@ -25,6 +25,36 @@ uint16_t find_spell(uint64_t memory)
 
     /* TODO */
 
+    int number_of_curr_bits = 0;
+    int found_spell = 0;
+
+    for(uint16_t i =0; i< 64; ++i)
+    {
+        // if the bit is set
+        if(memory & (1LU << i))
+        {
+            number_of_curr_bits++;
+        }   
+        else
+        {
+            number_of_curr_bits = 0;
+        }
+
+        if(number_of_curr_bits == 5)
+        {
+            found_spell = i+1;
+            break;
+        }
+    }
+    res = 0;
+    for(uint16_t i = 0; i < 16; ++i)
+    {
+        if(memory & (1LU << (found_spell+i)))
+        {
+            res |= (1LU << i);
+        }
+    }
+
     return res;
 }
 
@@ -48,6 +78,36 @@ uint16_t find_key(uint64_t memory)
 
     /* TODO */
 
+    int number_of_curr_bits = 0;
+    int found_key = 0;
+
+    for(uint16_t i =0; i< 64; ++i)
+    {
+        // if the bit is set
+        if(memory & (1LU << i))
+        {
+            number_of_curr_bits++;
+        }   
+        else
+        {
+            number_of_curr_bits = 0;
+        }
+
+        if(number_of_curr_bits == 3)
+        {
+            // set the found_key variable to the beggining of the key
+            found_key = i-3-16+1;
+            break;
+        }
+    }
+    res = 0;
+    for(uint16_t i =0; i< 16; ++i)
+    {
+        if(memory & (1LU << (i+found_key)))
+        {
+            res |= (1LU << i);
+        }
+    }
     return res;
 }
 
@@ -60,6 +120,38 @@ uint16_t decrypt_spell(uint16_t spell, uint16_t key)
      */
 
     uint16_t res = -1;
+    res = 0;
+
+    for(uint16_t i = 0; i< 16; ++i)
+    {
+        // if bit i is set in the encrypted spell
+        if(spell & (1LU <<i))
+        {
+            // if bit i is set in the key
+            if(key & (1LU << i))
+            {
+                // the bit is 0
+                continue;
+            }
+            else
+            {
+                // the bit is 1
+                res |= (1LU << i);
+            }
+        }
+        else
+        {
+            if(key & (1LU << i))
+            {
+                res |= (1LU << i);
+            }
+            else
+            {
+                continue;
+            }
+            
+        }
+    }
 
     /* TODO */
 
@@ -101,8 +193,56 @@ uint32_t choose_sword(uint16_t enemy)
      */
 
     uint32_t res = -1;
+    res = 0;
 
     /* TODO */
+    uint16_t number_of_set_bits = 0;
+    for(uint16_t i = 0; i< 16; ++i)
+    {
+        // if the bit is set increment the variable
+        if(enemy & (1LU << i))
+            number_of_set_bits++;
+    }
+    // if is odd
+    if(number_of_set_bits & 1)
+    {
+        enemy = ~enemy + 1;
+        // then the enemy is a human
+        // set the first 16 bits (flip the bits)
+        for(uint16_t i = 0; i< 16; ++i)
+        {
+            // if is set don't do anything
+            if(enemy & (1LU <<i))
+            {
+                res |= (1 << i);
+            }
+            
+            
+        }
+        // set the last 4 bits
+        res |= (1LU << 29);
+        res |= (1LU << 30);
+    }
+    else
+    {
+        // the enemy is a monster
+
+        // set the first 16 bits
+        uint16_t aux = enemy & (1 - enemy);
+        for(uint16_t i = 0; i< 16; ++i)
+        {
+            if(aux & (1LU << i))
+            {
+                res |= (1 << i);
+            }
+            
+        }
+
+        // set the last 4 bits
+        res |= (1LU << 28);
+        res |= (1LU << 31);
+    }
+    
 
     return res;
 }
@@ -133,8 +273,65 @@ uint32_t trial_of_the_grasses(uint16_t cocktail)
      */
 
     uint32_t res = -1;
+    res = 0;
 
     /* TODO */
+    // binary backtrace
+
+    // fixing antibodies_low
+    uint16_t antibodies_low = 0, antibodies_high = 0;
+    for(antibodies_low = 0; antibodies_low < (1LU << 16); ++antibodies_low)
+    {
+        int ok = 1;
+        antibodies_high = 0;
+        // going through each bit
+        for(uint16_t i =0; i < 16; ++i)
+        {
+            // if ith bit is set
+            if(antibodies_low & (1LU << i))
+            {
+                // if cocktail has the ith bit 0 
+                if(!(cocktail & (1LU << i)))
+                {
+                    // the combination is not right
+                    ok = 0;
+                    break;
+                }
+                
+            }
+            // ith bit of antibodies_low is 0 then antibodies_high can either be 0 or 1
+            else
+            {
+                // if ith bit of coktail is set
+                if(cocktail & (1LU << i))
+                {
+                    antibodies_high |= (1LU << i);
+                }
+            }
+        }
+        // didn't find a good value
+        if(ok == 0)
+            continue;
+        // checking the first condition
+        uint16_t aux1 = antibodies_high & cocktail;
+        uint16_t aux2 = antibodies_low | cocktail;
+        uint16_t res = aux1 ^ aux2;
+
+        if(res == 0)
+        {
+            // we found good values
+            break;
+        }
+    }
+
+    // building the final result
+    for(uint32_t i = 0; i< 16; ++i)
+    {
+        if(antibodies_low & (1LU << i))
+            res |= (1LU << i);
+        if(antibodies_high & (1LU << i))
+            res |= (1LU << (i+16));
+    }
 
     return res;
 }
@@ -174,6 +371,38 @@ uint8_t trial_of_forrest_eyes(uint64_t map)
     uint8_t res = -1;
 
     /* TODO */
+    uint16_t number_of_trees = 0;
+    // presume the forest is of type 0 with groups of 4 trees
+    uint16_t ok = 1;
+    for(uint64_t i = 0; i < 64; ++i)
+    {
+        // if we have a tree on bit i
+        if(map & (1LU << i))
+            number_of_trees++;
+        else
+        {
+            // checking if we don't have groups of 4 trees
+            if(number_of_trees % 4 != 0)
+                ok = 0;
+        }
+        
+    }
+
+    // deciding on the forest
+    if(number_of_trees == 64)
+        res = 2;
+    else if(number_of_trees == 0 || ok)
+        res = 0;
+    else if(number_of_trees == 2)
+    {
+        // if the middle 2 bits are 1
+        if((map & (1LU << 32)) && (map & (1LU << 31)))
+            res = 1;
+    }
+    else
+    {
+        res = 3;
+    }
 
     return res;
 }
@@ -203,6 +432,24 @@ uint8_t trial_of_the_dreams(uint32_t map)
      */
 
     uint8_t res = -1;
+    int last = -1;
+    for(uint32_t i = 0; i< 32; ++i)
+    {
+        // if the bit is set
+        if(map & (1LU << i))
+        {
+            // if is the first bit we found
+            if(last == -1)
+                last = i;
+            else
+            {
+                // set the distance and break
+                res = i - last;
+                break;
+            }
+            
+        }   
+    }
 
     /* TODO */
 
