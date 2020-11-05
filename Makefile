@@ -24,4 +24,4 @@ test_hunt: $(TEST_HUNT_OBJ)
 
 .PHONY: clean
 clean:
-	rm -rf $(TEST_GATES_OBJ) $(TEST_COMM_OBJ)
+	rm -rf $(TEST_GATES_OBJ) $(TEST_COMM_OBJ) $(TEST_HUNT_OBJ)

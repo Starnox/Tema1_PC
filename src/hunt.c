@@ -1,6 +1,7 @@
 #include "hunt.h"
 #include <stdio.h>
 
+
 /* Task 1 - Axii */
 
 uint16_t find_spell(uint64_t memory)
@@ -25,12 +26,13 @@ uint16_t find_spell(uint64_t memory)
 
     /* TODO */
 
+    // Variabile care retin numarul de biti setati la rand si indicele de unde incepe vraja
     int number_of_curr_bits = 0;
     int found_spell = 0;
 
     for(uint16_t i =0; i< 64; ++i)
     {
-        // if the bit is set
+        // Daca bitul i e setat
         if(memory & (1LU << i))
         {
             number_of_curr_bits++;
@@ -40,13 +42,16 @@ uint16_t find_spell(uint64_t memory)
             number_of_curr_bits = 0;
         }
 
+        // Daca gasesc 5 biti consecutivi de 1
         if(number_of_curr_bits == 5)
         {
+            // setez de unde incepe vraja si ies din instructiunea repetitiva
             found_spell = i+1;
             break;
         }
     }
     res = 0;
+    // Parcurg cei 16 biti din vraja si construiesc rezultatul
     for(uint16_t i = 0; i < 16; ++i)
     {
         if(memory & (1LU << (found_spell+i)))
@@ -78,12 +83,13 @@ uint16_t find_key(uint64_t memory)
 
     /* TODO */
 
+    // Procedez la fel ca la functia anterioara
     int number_of_curr_bits = 0;
     int found_key = 0;
 
     for(uint16_t i =0; i< 64; ++i)
     {
-        // if the bit is set
+        // Daca bitul e setat
         if(memory & (1LU << i))
         {
             number_of_curr_bits++;
@@ -95,12 +101,15 @@ uint16_t find_key(uint64_t memory)
 
         if(number_of_curr_bits == 3)
         {
-            // set the found_key variable to the beggining of the key
+            // Setez indexul de inceput folosind aritmetica simpla
+            // desfasurata pentru claritate
             found_key = i-3-16+1;
             break;
         }
     }
     res = 0;
+
+    // construiesc rezultatul si il returnez
     for(uint16_t i =0; i< 16; ++i)
     {
         if(memory & (1LU << (i+found_key)))
@@ -120,25 +129,28 @@ uint16_t decrypt_spell(uint16_t spell, uint16_t key)
      */
 
     uint16_t res = -1;
-    res = 0;
+
+    /* ***********Inefficient approach**********
+    Parcurg fiecare bit si construiesc in functie de cele doua varibile
 
     for(uint16_t i = 0; i< 16; ++i)
     {
-        // if bit i is set in the encrypted spell
+        // daca bitul i e setat in vraja criptata
         if(spell & (1LU <<i))
         {
-            // if bit i is set in the key
+            // daca bitu i e setat in cheie
             if(key & (1LU << i))
             {
-                // the bit is 0
+                // bitul cautat e 0,merg mai departe
                 continue;
             }
             else
             {
-                // the bit is 1
+                // bitul cautat e 1 si il setez
                 res |= (1LU << i);
             }
         }
+        // invers pe cealalta ramura
         else
         {
             if(key & (1LU << i))
@@ -152,8 +164,19 @@ uint16_t decrypt_spell(uint16_t spell, uint16_t key)
             
         }
     }
+    */
+    // **************Efficient approach*************
+    // Functia rezultata in urma analizarii tabelului logic
+    /*
+        a = spell_encrypted, b = spell_plaintext, c = key 
 
-    /* TODO */
+        a   c   b
+        0   0   0
+        0   1   1
+        1   0   1
+        1   1   0   => b = a xor c
+    */
+    res = spell ^ key;
 
     return res;
 }
@@ -199,46 +222,28 @@ uint32_t choose_sword(uint16_t enemy)
     uint16_t number_of_set_bits = 0;
     for(uint16_t i = 0; i< 16; ++i)
     {
-        // if the bit is set increment the variable
+        // Calculez numarul de biti setati
         if(enemy & (1LU << i))
             number_of_set_bits++;
     }
-    // if is odd
+    // Daca numarul e impar
     if(number_of_set_bits & 1)
     {
         enemy = ~enemy + 1;
-        // then the enemy is a human
-        // set the first 16 bits (flip the bits)
-        for(uint16_t i = 0; i< 16; ++i)
-        {
-            // if is set don't do anything
-            if(enemy & (1LU <<i))
-            {
-                res |= (1 << i);
-            }
-            
-            
-        }
-        // set the last 4 bits
+        res = enemy;
+        // Setez ultimii 4 biti
         res |= (1LU << 29);
         res |= (1LU << 30);
     }
     else
     {
-        // the enemy is a monster
+        // inamicul e un monstru
 
-        // set the first 16 bits
+        // variabila auxiliara
         uint16_t aux = enemy & (1 - enemy);
-        for(uint16_t i = 0; i< 16; ++i)
-        {
-            if(aux & (1LU << i))
-            {
-                res |= (1 << i);
-            }
-            
-        }
+        res = aux;
 
-        // set the last 4 bits
+        // Setez ultimii 4 biti
         res |= (1LU << 28);
         res |= (1LU << 31);
     }
@@ -276,62 +281,88 @@ uint32_t trial_of_the_grasses(uint16_t cocktail)
     res = 0;
 
     /* TODO */
-    // binary backtrace
-
+    /* O abordare de tip brute-force (prima varianta care mi-a trecut prin minte)
+        Complexitate: 2*16 aprox 10^4 Incearca toate variantele pentru antibodies_low
+        construieste pe antibodies_high si verifica propietatiile
+    */
     // fixing antibodies_low
+
+    /*
+    ***************************Inefficient approach - the first one i tried *******************
+
+    // fixez antibodies_low
     uint16_t antibodies_low = 0, antibodies_high = 0;
     for(antibodies_low = 0; antibodies_low < (1LU << 16); ++antibodies_low)
     {
         int ok = 1;
         antibodies_high = 0;
-        // going through each bit
+        // merg prin fiecare bit
         for(uint16_t i =0; i < 16; ++i)
         {
-            // if ith bit is set
+            // daca bitul e setat
             if(antibodies_low & (1LU << i))
             {
-                // if cocktail has the ith bit 0 
+                // daca cocktail are bitul i 0 
                 if(!(cocktail & (1LU << i)))
                 {
-                    // the combination is not right
+                    // Solutia nu e buna
                     ok = 0;
                     break;
                 }
                 
             }
-            // ith bit of antibodies_low is 0 then antibodies_high can either be 0 or 1
+            // daca bitul i e 0 atunci antibodies_high poate sa fie 0 sau 1
             else
             {
-                // if ith bit of coktail is set
                 if(cocktail & (1LU << i))
                 {
                     antibodies_high |= (1LU << i);
                 }
             }
         }
-        // didn't find a good value
+        // daca nu am gasit o solutie buna
         if(ok == 0)
             continue;
-        // checking the first condition
+
+        // verific prima conditie
         uint16_t aux1 = antibodies_high & cocktail;
         uint16_t aux2 = antibodies_low | cocktail;
         uint16_t res = aux1 ^ aux2;
 
         if(res == 0)
         {
-            // we found good values
+            am gasit solutia
             break;
         }
     }
 
     // building the final result
-    for(uint32_t i = 0; i< 16; ++i)
-    {
-        if(antibodies_low & (1LU << i))
-            res |= (1LU << i);
-        if(antibodies_high & (1LU << i))
-            res |= (1LU << (i+16));
-    }
+    res = antibodies_high;
+    res <<= 16;
+    res |= (antibodies_low);
+
+    */
+
+   /*
+        **************Efficient approach********************
+        
+        a = antibodies_high
+        b = antibodies_low
+        c = cocktail
+
+            Tabel Logic
+
+        a   0   1   0   1
+        b   1   0   0   1
+                        Nu este bun pentru ca a&b = 0
+        c   1   1   0   
+        a&c 0   1   0
+        b|c 1   1   0
+ (a&c)^(b|c)1   0   0
+                singurele optiuni valide -> a == c and b == 0
+   */
+    res = cocktail;
+    res <<= 16;
 
     return res;
 }
@@ -372,23 +403,23 @@ uint8_t trial_of_forrest_eyes(uint64_t map)
 
     /* TODO */
     uint16_t number_of_trees = 0;
-    // presume the forest is of type 0 with groups of 4 trees
+    // presupunem ca padure e de tipul 0 si are grupari de 4 copaci consecutivi
     uint16_t ok = 1;
     for(uint64_t i = 0; i < 64; ++i)
     {
-        // if we have a tree on bit i
+        // daca e copac pe bitul i
         if(map & (1LU << i))
             number_of_trees++;
         else
         {
-            // checking if we don't have groups of 4 trees
+            // daca nu e grup de 4 copaci
             if(number_of_trees % 4 != 0)
                 ok = 0;
         }
         
     }
 
-    // deciding on the forest
+    // se alege tipul de padure
     if(number_of_trees == 64)
         res = 2;
     else if(number_of_trees == 0 || ok)
@@ -432,18 +463,20 @@ uint8_t trial_of_the_dreams(uint32_t map)
      */
 
     uint8_t res = -1;
+
+    // last retine pozitia primului copac
     int last = -1;
     for(uint32_t i = 0; i< 32; ++i)
     {
-        // if the bit is set
+        // daca bitul e setat
         if(map & (1LU << i))
         {
-            // if is the first bit we found
+            // daca e primul pe care l-am gasit
             if(last == -1)
                 last = i;
             else
             {
-                // set the distance and break
+                // seteaza rezultatul si iese din instructiunea repetitiva
                 res = i - last;
                 break;
             }
